@@ -10,11 +10,12 @@ interface WordData {
 
 interface WordHistoryProps {
   wordHistory: WordData[];
+  setWordHistory: (history: WordData[]) => void;
   setCurrentWord: (word: string) => void;
-  setActiveTab: (tab: 'speak' | 'practice' | 'analyze' | 'learn' | 'history') => void;
+  setActiveTab: (tab: 'speak' | 'analyze' | 'learn' | 'history') => void;
 }
 
-const WordHistory: React.FC<WordHistoryProps> = ({ wordHistory, setCurrentWord, setActiveTab }) => {
+const WordHistory: React.FC<WordHistoryProps> = ({ wordHistory, setWordHistory, setCurrentWord, setActiveTab }) => {
   const formatTimestamp = (timestamp: number) => {
     const date = new Date(timestamp);
     const now = new Date();
@@ -38,7 +39,7 @@ const WordHistory: React.FC<WordHistoryProps> = ({ wordHistory, setCurrentWord, 
 
   const practiceWord = (word: string) => {
     setCurrentWord(word);
-    setActiveTab('practice');
+    setActiveTab('analyze');
   };
 
   const learnMore = (word: string) => {
@@ -49,8 +50,16 @@ const WordHistory: React.FC<WordHistoryProps> = ({ wordHistory, setCurrentWord, 
   const clearHistory = () => {
     if (window.confirm('Are you sure you want to clear all history?')) {
       localStorage.removeItem('pronunciationHistory');
-      window.location.reload();
+      setWordHistory([]);
     }
+  };
+
+  const removeWord = (wordToRemove: WordData) => {
+    const updatedHistory = wordHistory.filter(word => 
+      !(word.word === wordToRemove.word && word.timestamp === wordToRemove.timestamp)
+    );
+    setWordHistory(updatedHistory);
+    localStorage.setItem('pronunciationHistory', JSON.stringify(updatedHistory));
   };
 
   const getRecentWords = () => {
@@ -186,7 +195,7 @@ const WordHistory: React.FC<WordHistoryProps> = ({ wordHistory, setCurrentWord, 
                         onClick={() => practiceWord(wordData.word)}
                         className="px-3 py-1 text-sm bg-green-100 text-green-700 rounded-full hover:bg-green-200 transition-colors"
                       >
-                        Practice
+                        Analyze
                       </button>
                       
                       <button
@@ -194,6 +203,14 @@ const WordHistory: React.FC<WordHistoryProps> = ({ wordHistory, setCurrentWord, 
                         className="px-3 py-1 text-sm bg-blue-100 text-blue-700 rounded-full hover:bg-blue-200 transition-colors"
                       >
                         Learn More
+                      </button>
+
+                      <button
+                        onClick={() => removeWord(wordData)}
+                        className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                        title="Remove from history"
+                      >
+                        <Trash2 className="w-4 h-4" />
                       </button>
                     </div>
                   </div>

@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Mic, Volume2, BookOpen, History, Languages, Brain } from 'lucide-react';
+import { Volume2, BookOpen, History, Languages, Brain } from 'lucide-react';
 import TextToSpeech from './components/TextToSpeech';
-import SpeechRecognition from './components/SpeechRecognition';
 import PronunciationAnalyzer from './components/PronunciationAnalyzer';
 import Dictionary from './components/Dictionary';
 import WordHistory from './components/WordHistory';
@@ -14,7 +13,7 @@ interface WordData {
 }
 
 function App() {
-  const [activeTab, setActiveTab] = useState<'speak' | 'practice' | 'analyze' | 'learn' | 'history'>('speak');
+  const [activeTab, setActiveTab] = useState<'speak' | 'analyze' | 'learn' | 'history'>('speak');
   const [currentWord, setCurrentWord] = useState('');
   const [wordHistory, setWordHistory] = useState<WordData[]>([]);
 
@@ -33,7 +32,6 @@ function App() {
 
   const tabs = [
     { id: 'speak' as const, label: 'Text to Speech', icon: Volume2 },
-    { id: 'practice' as const, label: 'Practice', icon: Mic },
     { id: 'analyze' as const, label: 'AI Analysis', icon: Brain },
     { id: 'learn' as const, label: 'Dictionary', icon: BookOpen },
     { id: 'history' as const, label: 'History', icon: History },
@@ -84,12 +82,6 @@ function App() {
               addToHistory={addToHistory}
             />
           )}
-          {activeTab === 'practice' && (
-            <SpeechRecognition 
-              currentWord={currentWord} 
-              setCurrentWord={setCurrentWord}
-            />
-          )}
           {activeTab === 'analyze' && (
             <PronunciationAnalyzer 
               currentWord={currentWord} 
@@ -106,6 +98,7 @@ function App() {
           {activeTab === 'history' && (
             <WordHistory 
               wordHistory={wordHistory}
+              setWordHistory={setWordHistory}
               setCurrentWord={setCurrentWord}
               setActiveTab={setActiveTab}
             />

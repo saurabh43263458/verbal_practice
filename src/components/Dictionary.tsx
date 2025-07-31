@@ -61,6 +61,7 @@ const Dictionary: React.FC<DictionaryProps> = ({ currentWord, setCurrentWord, ad
       const data = await response.json();
       const firstEntry = data[0];
       setWordData(firstEntry);
+      setCurrentWord(firstEntry.word);
 
       // Get synonyms and antonyms from Datamuse API
       try {
@@ -117,6 +118,7 @@ const Dictionary: React.FC<DictionaryProps> = ({ currentWord, setCurrentWord, ad
 
   const searchRelatedWord = (word: string) => {
     setSearchWord(word);
+    setCurrentWord(word);
     searchDictionary(word);
   };
 
