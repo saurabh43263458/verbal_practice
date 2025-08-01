@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -19,6 +19,7 @@ const LoginPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const { signIn } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const {
     register,
@@ -42,7 +43,10 @@ const LoginPage: React.FC = () => {
         setError('email', { message: error.message });
       }
     } else {
-      navigate('/profile');
+      // Check if there's a redirect URL from protected route access attempt
+      const location = useLocation();
+      const from = location.state?.from?.pathname || '/';
+      navigate(from, { replace: true });
     }
     
     setIsLoading(false);
