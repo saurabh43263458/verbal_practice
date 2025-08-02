@@ -43,9 +43,8 @@ const LoginPage: React.FC = () => {
         setError('email', { message: error.message });
       }
     } else {
-      // Check if there's a redirect URL from protected route access attempt
-      const location = useLocation();
-      const from = location.state?.from?.pathname || '/';
+        // Redirect to pronunciation app after successful login
+        const from = location.state?.from?.pathname || '/pronunciation';
       navigate(from, { replace: true });
     }
     
