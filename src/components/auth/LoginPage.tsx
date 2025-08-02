@@ -40,9 +40,8 @@ const LoginPage: React.FC = () => {
         setError('email', { message: 'Invalid email or password' });
         setError('password', { message: 'Invalid email or password' });
       } else {
-        setError('email', { message: error.message });
-      }
-    } else {
+        // Redirect to pronunciation app after successful login
+        const from = location.state?.from?.pathname || '/pronunciation';
       // Check if there's a redirect URL from protected route access attempt
       const location = useLocation();
       const from = location.state?.from?.pathname || '/';
