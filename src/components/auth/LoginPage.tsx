@@ -43,8 +43,8 @@ const LoginPage: React.FC = () => {
         setError('email', { message: error.message });
       }
     } else {
-        // Redirect to pronunciation app after successful login
-        const from = location.state?.from?.pathname || '/pronunciation';
+        // Redirect to the page user was trying to access, or pronunciation app by default
+        const from = location.state?.from?.pathname || '/';
       navigate(from, { replace: true });
     }
     

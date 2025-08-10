@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
-import { Volume2, BookOpen, History, Languages, Brain } from 'lucide-react';
+import { Volume2, BookOpen, History, Languages, Brain, User } from 'lucide-react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import TextToSpeech from './components/TextToSpeech';
 import PronunciationAnalyzer from './components/PronunciationAnalyzer';
@@ -24,6 +24,7 @@ const PronunciationApp: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'speak' | 'analyze' | 'learn' | 'history'>('speak');
   const [currentWord, setCurrentWord] = useState('');
   const [wordHistory, setWordHistory] = useState<WordData[]>([]);
+  const { user, profile, signOut } = useAuth();
 
   useEffect(() => {
     const saved = localStorage.getItem('pronunciationHistory');
@@ -49,6 +50,45 @@ const PronunciationApp: React.FC = () => {
     <ProtectedRoute>
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
         <div className="container mx-auto px-4 py-8 max-w-6xl">
+          {/* User Header */}
+          <div className="flex justify-between items-center mb-6">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center overflow-hidden">
+                {profile?.avatar_url ? (
+                  <img
+                    src={profile.avatar_url}
+                    alt="Profile"
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <User className="w-6 h-6 text-white" />
+                )}
+              </div>
+              <div>
+                <p className="font-medium text-gray-800">
+                  Welcome back, {profile?.first_name || profile?.username || 'User'}!
+                </p>
+                <p className="text-sm text-gray-600">Ready to practice pronunciation?</p>
+              </div>
+            </div>
+            
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => window.location.href = '/profile'}
+                className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:bg-white/50 rounded-lg transition-colors"
+              >
+                <User className="w-4 h-4" />
+                Profile
+              </button>
+              <button
+                onClick={signOut}
+                className="px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+              >
+                Sign Out
+              </button>
+            </div>
+          </div>
+
           {/* Header */}
           <div className="text-center mb-8">
             <div className="flex items-center justify-center gap-3 mb-4">
