@@ -26,6 +26,15 @@ const PronunciationApp: React.FC = () => {
   const [wordHistory, setWordHistory] = useState<WordData[]>([]);
   const { user, profile, signOut } = useAuth();
 
+  // For development without real Supabase, create a mock profile
+  const displayProfile = profile || {
+    username: 'demo_user',
+    first_name: 'Demo',
+    last_name: 'User',
+    email: 'demo@example.com',
+    avatar_url: null
+  };
+
   useEffect(() => {
     const saved = localStorage.getItem('pronunciationHistory');
     if (saved) {
@@ -54,9 +63,9 @@ const PronunciationApp: React.FC = () => {
           <div className="flex justify-between items-center mb-6">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center overflow-hidden">
-                {profile?.avatar_url ? (
+                {displayProfile?.avatar_url ? (
                   <img
-                    src={profile.avatar_url}
+                    src={displayProfile.avatar_url}
                     alt="Profile"
                     className="w-full h-full object-cover"
                   />
@@ -66,7 +75,7 @@ const PronunciationApp: React.FC = () => {
               </div>
               <div>
                 <p className="font-medium text-gray-800">
-                  Welcome back, {profile?.first_name || profile?.username || 'User'}!
+                  Welcome back, {displayProfile?.first_name || displayProfile?.username || 'User'}!
                 </p>
                 <p className="text-sm text-gray-600">Ready to practice pronunciation?</p>
               </div>
