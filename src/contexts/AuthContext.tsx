@@ -8,6 +8,7 @@ interface AuthContextType {
   profile: UserProfile | null;
   session: Session | null;
   loading: boolean;
+  profileError: string | null;
   signUp: (email: string, password: string, userData: any) => Promise<{ error: any }>;
   signIn: (email: string, password: string, rememberMe?: boolean) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
@@ -16,6 +17,7 @@ interface AuthContextType {
   updatePassword: (newPassword: string) => Promise<{ error: any }>;
   deleteAccount: () => Promise<{ error: any }>;
   uploadAvatar: (file: File) => Promise<{ error: any; url?: string }>;
+  retryProfileFetch: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -33,9 +35,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [profileError, setProfileError] = useState<string | null>(null);
 
   useEffect(() => {
     let mounted = true;
+    let abortController = new AbortController();
 
     // Get initial session with timeout
     const initAuth = async () => {
@@ -59,7 +63,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setUser(session?.user ?? null);
         
         if (session?.user) {
-          await fetchProfile(session.user.id);
+          await fetchProfile(session.user.id, abortController);
         } else {
           setLoading(false);
         }
@@ -76,11 +80,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        // Cancel any ongoing profile fetch
+        abortController.abort();
+        abortController = new AbortController();
+        
         setSession(session);
         setUser(session?.user ?? null);
+        setProfileError(null);
         
         if (session?.user) {
-          await fetchProfile(session.user.id);
+          await fetchProfile(session.user.id, abortController);
         } else {
           setProfile(null);
           setLoading(false);
@@ -90,47 +99,77 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     return () => {
       mounted = false;
+      abortController.abort();
       subscription.unsubscribe();
     };
   }, []);
 
-  const fetchProfile = async (userId: string) => {
+  const fetchProfile = async (userId: string, abortController?: AbortController) => {
     if (!userId) {
       setLoading(false);
       return;
     }
 
+    setProfileError(null);
+
     try {
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Profile fetch timeout')), 5000)
+      );
+
+      const profilePromise = supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single()
+        .abortSignal(abortController?.signal);
+
       const { data, error } = await Promise.race([
-        supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', userId)
-          .single(),
-        new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Profile fetch timeout')), 5000)
-        )
+        profilePromise,
+        timeoutPromise
       ]) as any;
+
+      // Check if request was aborted
+      if (abortController?.signal.aborted) {
+        return;
+      }
 
       if (error) {
         if (error.code === 'PGRST116') {
           // Profile doesn't exist - this is normal for new users
           console.log('Profile not found, user may need to complete setup');
+          setProfileError('Profile not found. Please complete your profile setup.');
         } else {
           console.error('Error fetching profile:', error);
+          setProfileError(`Failed to load profile: ${error.message}`);
         }
         setProfile(null);
       } else {
         setProfile(data);
+        setProfileError(null);
       }
     } catch (error) {
+      if (error.name === 'AbortError') {
+        // Request was cancelled, don't set error
+        return;
+      }
+      
       console.error('Profile fetch failed:', error);
+      setProfileError(error.message || 'Failed to load profile');
       setProfile(null);
     } finally {
       setLoading(false);
     }
   };
 
+  const retryProfileFetch = async () => {
+    if (!user?.id) return;
+    
+    setLoading(true);
+    setProfileError(null);
+    const abortController = new AbortController();
+    await fetchProfile(user.id, abortController);
+  };
   const signUp = async (email: string, password: string, userData: any) => {
     try {
       setLoading(true);
@@ -261,7 +300,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       // Refresh profile data
-      await fetchProfile(user.id);
+      await retryProfileFetch();
       toast.success('Profile updated successfully!');
       return { error: null };
     } catch (error: any) {
@@ -351,6 +390,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     profile,
     session,
     loading,
+    profileError,
     signUp,
     signIn,
     signOut,
@@ -359,6 +399,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     updatePassword,
     deleteAccount,
     uploadAvatar,
+    retryProfileFetch,
   };
 
   return (

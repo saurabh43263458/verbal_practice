@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -12,7 +12,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   const [showTimeoutWarning, setShowTimeoutWarning] = useState(false);
 
   // Show timeout warning after 2 seconds instead of 5
-  React.useEffect(() => {
+  useEffect(() => {
     const timeout = setTimeout(() => {
       if (loading) {
         setShowTimeoutWarning(true);

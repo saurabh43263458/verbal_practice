@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { Toaster } from 'react-hot-toast';
 import { Volume2, BookOpen, History, Languages, Brain, User } from 'lucide-react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import ErrorBoundary from './components/ErrorBoundary';
 import TextToSpeech from './components/TextToSpeech';
 import PronunciationAnalyzer from './components/PronunciationAnalyzer';
 import Dictionary from './components/Dictionary';
@@ -24,7 +25,7 @@ const PronunciationApp: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'speak' | 'analyze' | 'learn' | 'history'>('speak');
   const [currentWord, setCurrentWord] = useState('');
   const [wordHistory, setWordHistory] = useState<WordData[]>([]);
-  const { user, profile, signOut, loading } = useAuth();
+  const { user, profile, profileError, signOut, loading, retryProfileFetch } = useAuth();
 
   useEffect(() => {
     const saved = localStorage.getItem('pronunciationHistory');
@@ -34,13 +35,28 @@ const PronunciationApp: React.FC = () => {
   }, []);
 
   // Use actual profile or fallback for development
-  const displayProfile = profile || (user ? {
-    username: user.email?.split('@')[0] || 'user',
-    first_name: user.user_metadata?.first_name || 'User',
-    last_name: user.user_metadata?.last_name || '',
-    email: user.email || '',
-    avatar_url: null
-  } : null);
+  const getDisplayProfile = () => {
+    if (profile) return profile;
+    
+    // If there's a profile error but we have a user, show fallback
+    if (profileError && user) {
+      return {
+        id: user.id,
+        username: user.email?.split('@')[0] || 'user',
+        first_name: user.user_metadata?.first_name || 'User',
+        last_name: user.user_metadata?.last_name || '',
+        email: user.email || '',
+        phone_number: null,
+        avatar_url: null,
+        created_at: '',
+        updated_at: ''
+      };
+    }
+    
+    return null;
+  };
+
+  const displayProfile = getDisplayProfile();
 
   // Show loading state if still authenticating
   if (loading) {
@@ -75,6 +91,27 @@ const PronunciationApp: React.FC = () => {
     <ProtectedRoute>
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
         <div className="container mx-auto px-4 py-8 max-w-6xl">
+          {/* Profile Error Banner */}
+          {profileError && (
+            <div className="mb-6 bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <AlertTriangle className="w-5 h-5 text-yellow-600" />
+                  <div>
+                    <p className="text-yellow-800 font-medium">Profile Loading Issue</p>
+                    <p className="text-yellow-700 text-sm">{profileError}</p>
+                  </div>
+                </div>
+                <button
+                  onClick={retryProfileFetch}
+                  className="px-3 py-1 bg-yellow-200 text-yellow-800 rounded hover:bg-yellow-300 transition-colors text-sm"
+                >
+                  Retry
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* User Header */}
           <div className="flex justify-between items-center mb-6">
             <div className="flex items-center gap-3">
@@ -149,6 +186,7 @@ const PronunciationApp: React.FC = () => {
 
           {/* Content */}
           <div className="bg-white rounded-2xl shadow-xl p-6 md:p-8">
+            <ErrorBoundary>
             {activeTab === 'speak' && (
               <TextToSpeech 
                 currentWord={currentWord} 
@@ -177,6 +215,7 @@ const PronunciationApp: React.FC = () => {
                 setActiveTab={setActiveTab}
               />
             )}
+            </ErrorBoundary>
           </div>
 
           {/* Footer */}
@@ -191,36 +230,38 @@ const PronunciationApp: React.FC = () => {
 
 function App() {
   return (
-    <AuthProvider>
-      <Router>
-        <div className="App">
-          <Routes>
-            {/* Public routes */}
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/signup" element={<SignupPage />} />
-            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+    <ErrorBoundary>
+      <AuthProvider>
+        <Router>
+          <div className="App">
+            <Routes>
+              {/* Public routes */}
+              <Route path="/login" element={<LoginPage />} />
+              <Route path="/signup" element={<SignupPage />} />
+              <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+              
+              {/* Protected routes */}
+              <Route path="/profile" element={<ProfileSection />} />
+              <Route path="/pronunciation" element={<PronunciationApp />} />
+              
+              {/* Default redirect */}
+              <Route path="/" element={<Navigate to="/pronunciation" replace />} />
+            </Routes>
             
-            {/* Protected routes */}
-            <Route path="/profile" element={<ProfileSection />} />
-            <Route path="/pronunciation" element={<PronunciationApp />} />
-            
-            {/* Default redirect */}
-            <Route path="/" element={<Navigate to="/pronunciation" replace />} />
-          </Routes>
-          
-          <Toaster
-            position="top-right"
-            toastOptions={{
-              duration: 4000,
-              style: {
-                background: '#363636',
-                color: '#fff',
-              },
-            }}
-          />
-        </div>
-      </Router>
-    </AuthProvider>
+            <Toaster
+              position="top-right"
+              toastOptions={{
+                duration: 4000,
+                style: {
+                  background: '#363636',
+                  color: '#fff',
+                },
+              }}
+            />
+          </div>
+        </Router>
+      </AuthProvider>
+    </ErrorBoundary>
   );
 }
 
