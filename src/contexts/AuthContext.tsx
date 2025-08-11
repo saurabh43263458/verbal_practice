@@ -108,7 +108,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           .eq('id', userId)
           .single(),
         new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Profile fetch timeout')), 2000)
+          setTimeout(() => reject(new Error('Profile fetch timeout')), 5000)
         )
       ]) as any;
 

@@ -26,6 +26,22 @@ const PronunciationApp: React.FC = () => {
   const [wordHistory, setWordHistory] = useState<WordData[]>([]);
   const { user, profile, signOut, loading } = useAuth();
 
+  useEffect(() => {
+    const saved = localStorage.getItem('pronunciationHistory');
+    if (saved) {
+      setWordHistory(JSON.parse(saved));
+    }
+  }, []);
+
+  // Use actual profile or fallback for development
+  const displayProfile = profile || (user ? {
+    username: user.email?.split('@')[0] || 'user',
+    first_name: user.user_metadata?.first_name || 'User',
+    last_name: user.user_metadata?.last_name || '',
+    email: user.email || '',
+    avatar_url: null
+  } : null);
+
   // Show loading state if still authenticating
   if (loading) {
     return (
@@ -38,25 +54,9 @@ const PronunciationApp: React.FC = () => {
     );
   }
 
-  // Use actual profile or fallback for development
-  const displayProfile = profile || (user ? {
-    username: user.email?.split('@')[0] || 'user',
-    first_name: user.user_metadata?.first_name || 'User',
-    last_name: user.user_metadata?.last_name || '',
-    email: user.email || '',
-    avatar_url: null
-  } : null);
-
   if (!displayProfile) {
     return <Navigate to="/login" replace />;
   }
-
-  useEffect(() => {
-    const saved = localStorage.getItem('pronunciationHistory');
-    if (saved) {
-      setWordHistory(JSON.parse(saved));
-    }
-  }, []);
 
   const addToHistory = (wordData: WordData) => {
     const newHistory = [wordData, ...wordHistory.filter(w => w.word !== wordData.word)].slice(0, 50);
