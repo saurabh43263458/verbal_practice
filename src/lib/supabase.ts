@@ -3,13 +3,37 @@ import { createClient } from '@supabase/supabase-js';
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
+// Check if we're in development mode
+const isDevelopment = import.meta.env.DEV;
+
 if (!supabaseUrl || !supabaseAnonKey) {
-  console.warn('Missing Supabase environment variables. Using placeholder values for development.');
+  if (isDevelopment) {
+    console.warn('⚠️  Missing Supabase environment variables!');
+    console.warn('Please create a .env file with:');
+    console.warn('VITE_SUPABASE_URL=your_supabase_url');
+    console.warn('VITE_SUPABASE_ANON_KEY=your_supabase_anon_key');
+  }
 }
 
 export const supabase = createClient(
   supabaseUrl || 'https://placeholder.supabase.co',
-  supabaseAnonKey || 'placeholder-anon-key'
+  supabaseAnonKey || 'placeholder-anon-key',
+  {
+    auth: {
+      persistSession: true,
+      autoRefreshToken: true,
+      detectSessionInUrl: true,
+    },
+    global: {
+      headers: {
+        'X-Client-Info': 'pronunciation-app',
+      },
+    },
+    // Add timeout for requests
+    db: {
+      schema: 'public',
+    },
+  }
 );
 
 // Database types

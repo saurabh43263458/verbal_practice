@@ -24,16 +24,32 @@ const PronunciationApp: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'speak' | 'analyze' | 'learn' | 'history'>('speak');
   const [currentWord, setCurrentWord] = useState('');
   const [wordHistory, setWordHistory] = useState<WordData[]>([]);
-  const { user, profile, signOut } = useAuth();
+  const { user, profile, signOut, loading } = useAuth();
 
-  // For development without real Supabase, create a mock profile
-  const displayProfile = profile || {
-    username: 'demo_user',
-    first_name: 'Demo',
-    last_name: 'User',
-    email: 'demo@example.com',
+  // Show loading state if still authenticating
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading your profile...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Use actual profile or fallback for development
+  const displayProfile = profile || (user ? {
+    username: user.email?.split('@')[0] || 'user',
+    first_name: user.user_metadata?.first_name || 'User',
+    last_name: user.user_metadata?.last_name || '',
+    email: user.email || '',
     avatar_url: null
-  };
+  } : null);
+
+  if (!displayProfile) {
+    return <Navigate to="/login" replace />;
+  }
 
   useEffect(() => {
     const saved = localStorage.getItem('pronunciationHistory');

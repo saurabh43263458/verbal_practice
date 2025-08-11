@@ -9,14 +9,15 @@ interface ProtectedRouteProps {
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   const { user, loading } = useAuth();
   const location = useLocation();
+  const [showTimeoutWarning, setShowTimeoutWarning] = useState(false);
 
-  // For development, add a timeout to prevent infinite loading
+  // Show timeout warning after 2 seconds instead of 5
   React.useEffect(() => {
     const timeout = setTimeout(() => {
       if (loading) {
-        console.warn('Authentication check taking too long, this might indicate Supabase connection issues');
+        setShowTimeoutWarning(true);
       }
-    }, 5000);
+    }, 2000);
 
     return () => clearTimeout(timeout);
   }, [loading]);
@@ -26,10 +27,27 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 flex items-center justify-center">
         <div className="text-center">
           <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading...</p>
-          <p className="text-sm text-gray-500 mt-2">
-            If this takes too long, check your Supabase configuration
+          <p className="text-gray-600">
+            {showTimeoutWarning ? 'Connecting to authentication service...' : 'Loading...'}
           </p>
+          {showTimeoutWarning && (
+            <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg max-w-md mx-auto">
+              <p className="text-sm text-yellow-800 mb-2">
+                Taking longer than expected. This might indicate:
+              </p>
+              <ul className="text-xs text-yellow-700 text-left space-y-1">
+                <li>• Supabase environment variables not configured</li>
+                <li>• Network connectivity issues</li>
+                <li>• Supabase service temporarily unavailable</li>
+              </ul>
+              <button
+                onClick={() => window.location.reload()}
+                className="mt-3 px-3 py-1 bg-yellow-200 text-yellow-800 rounded text-sm hover:bg-yellow-300 transition-colors"
+              >
+                Retry
+              </button>
+            </div>
+          )}
         </div>
       </div>
     );
